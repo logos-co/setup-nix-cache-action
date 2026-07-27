@@ -16,19 +16,12 @@ inputs:
       testing against a different Attic deployment.
     required: false
     default: 'https://cache.nix.logos.co'
-  attic-token-ci:
+  attic-token:
     description: >
-      Token for the ci cache; pass secrets.ATTIC_TOKEN_CI (repo-wide). Used
-      for every ref except master/main.
-    required: false
-    default: ''
-  attic-token-public:
-    description: >
-      Token for the public cache; pass secrets.ATTIC_TOKEN_PUBLIC. It only
-      exists in the public-cache environment, so the calling job must enter
-      that environment on master (see README for the environment expression)
-      — outside it the secret resolves to empty and master pushes are
-      skipped rather than failing.
+      Attic token; pass "secrets.ATTIC_TOKEN_PUBLIC || secrets.ATTIC_TOKEN_CI".
+      ATTIC_TOKEN_PUBLIC only exists in the public-cache environment, so it
+      wins exactly on the master/main jobs that enter it. Empty (fork PRs)
+      skips publishing.
     required: false
     default: ''
   cache:
@@ -63,29 +56,12 @@ runs:
           fallback = true
           ${{ inputs.extra-nix-config }}
 
-    - name: Select Attic cache and token
-      id: select
-      shell: bash
-      env:
-        IS_DEFAULT_BRANCH: ${{ (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && 'true' || 'false' }}
-        CACHE_OVERRIDE: ${{ inputs.cache }}
-        TOKEN_CI: ${{ inputs.attic-token-ci }}
-        TOKEN_PUBLIC: ${{ inputs.attic-token-public }}
-      run: |
-        if [ "$IS_DEFAULT_BRANCH" = "true" ]; then
-          cache="${CACHE_OVERRIDE:-public}"; token="$TOKEN_PUBLIC"
-        else
-          cache="${CACHE_OVERRIDE:-ci}"; token="$TOKEN_CI"
-        fi
-        echo "cache=$cache" >> "$GITHUB_OUTPUT"
-        echo "token=$token" >> "$GITHUB_OUTPUT"
-
     # Publishing only; reading is covered by the substituters above. Runs as a
     # post step at the end of the job, pushing the store paths the job built.
     - name: Setup Attic push
-      if: steps.select.outputs.token != '' && inputs.attic-endpoint != ''
+      if: inputs.attic-token != ''
       uses: ryanccn/attic-action@v0.4.1
       with:
         endpoint: ${{ inputs.attic-endpoint }}
-        cache: ${{ steps.select.outputs.cache }}
-        token: ${{ steps.select.outputs.token }}
+        cache: ${{ inputs.cache != '' && inputs.cache || ((github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && 'public' || 'ci') }}
+        token: ${{ inputs.attic-token }}

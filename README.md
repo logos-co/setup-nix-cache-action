@@ -24,16 +24,17 @@ jobs:
 
       - uses: logos-co/setup-nix-cache-action@v1
         with:
-          attic-token-ci: ${{ secrets.ATTIC_TOKEN_CI }}
-          attic-token-public: ${{ secrets.ATTIC_TOKEN_PUBLIC }}
+          attic-token: ${{ secrets.ATTIC_TOKEN_PUBLIC || secrets.ATTIC_TOKEN_CI }}
 
       - run: nix build -L
 ```
 
-That's the whole integration. The action picks the cache and token from the
-ref; when the matching token is empty (fork PRs get no secrets at all, and
-`ATTIC_TOKEN_PUBLIC` is empty outside the `public-cache` environment) it
-skips publishing instead of failing — pulling always works. The endpoint is
+That's the whole integration. `ATTIC_TOKEN_PUBLIC` only exists in the
+`public-cache` environment, so the `||` picks it exactly on the master jobs
+that enter it and falls back to the repo-wide `ATTIC_TOKEN_CI` everywhere
+else; the action pushes to `public` on master/main and to `ci` otherwise.
+When the token is empty (fork PRs get no secrets at all) it skips
+publishing instead of failing — pulling always works. The endpoint is
 baked in: it is public knowledge, not a secret.
 
 The repo must be listed in
@@ -45,8 +46,7 @@ for the secrets to exist; ask infra to add it and run the ansible role.
 | input | default | notes |
 |---|---|---|
 | `attic-endpoint` | `https://cache.nix.logos.co` | override only for testing another Attic deployment |
-| `attic-token-ci` | `''` | pass `secrets.ATTIC_TOKEN_CI` (repo-wide) |
-| `attic-token-public` | `''` | pass `secrets.ATTIC_TOKEN_PUBLIC` (public-cache environment) |
+| `attic-token` | `''` | pass `secrets.ATTIC_TOKEN_PUBLIC \|\| secrets.ATTIC_TOKEN_CI`; empty skips publishing |
 | `cache` | auto | override the publish cache (`public` on master/main, `ci` otherwise) |
 | `install-nix` | `true` | set `false` if the workflow installs Nix itself |
 | `extra-nix-config` | `''` | extra lines for the Nix config at install time |
