@@ -74,6 +74,9 @@ runs:
       run: |
         if [ "$IS_DEFAULT_BRANCH" = "true" ]; then
           cache="${CACHE_OVERRIDE:-public}"; token="$TOKEN_PUBLIC"
+          if [ -z "$token" ]; then
+            echo "::warning title=setup-nix-cache-action::attic-token-public is empty on the default branch — nothing will be published. Did the job forget 'environment: public-cache'?"
+          fi
         else
           cache="${CACHE_OVERRIDE:-ci}"; token="$TOKEN_CI"
         fi
