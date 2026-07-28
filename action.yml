@@ -63,6 +63,16 @@ runs:
           fallback = true
           ${{ inputs.extra-nix-config }}
 
+    # attic-action resolves `attic` via PATH, which only works when a Nix
+    # installer action ran in the same job. With preinstalled Nix (self-hosted
+    # runners) provide the client at its store path.
+    - name: Provide attic client
+      if: inputs.install-nix != 'true'
+      shell: bash
+      run: |
+        command -v attic >/dev/null && exit 0
+        echo "$(nix build --no-link --print-out-paths 'github:NixOS/nixpkgs/nixpkgs-unstable#attic-client')/bin" >> "$GITHUB_PATH"
+
     - name: Select Attic cache and token
       id: select
       shell: bash
