@@ -84,7 +84,7 @@ runs:
     # post step at the end of the job, pushing the store paths the job built.
     - name: Setup Attic push
       if: steps.select.outputs.token != '' && inputs.attic-endpoint != ''
-      uses: ryanccn/attic-action@v0.4.1
+      uses: ryanccn/attic-action@v0.5.0
       with:
         endpoint: ${{ inputs.attic-endpoint }}
         cache: ${{ steps.select.outputs.cache }}
