@@ -80,6 +80,18 @@ runs:
         echo "cache=$cache" >> "$GITHUB_OUTPUT"
         echo "token=$token" >> "$GITHUB_OUTPUT"
 
+    - name: Add Attic bin to PATH
+      if: steps.select.outputs.token != '' && inputs.attic-endpoint != ''
+      shell: bash
+      run: |
+        if command -v attic >/dev/null 2>&1; then
+          echo "attic already on PATH: $(command -v attic)"
+          exit 0
+        fi
+        bin="$(nix --extra-experimental-features 'nix-command flakes' build --no-link --print-out-paths \
+          'github:NixOS/nixpkgs/nixpkgs-unstable#attic-client')/bin"
+        echo "$bin" >> "$GITHUB_PATH"
+
     # Publishing only; reading is covered by the substituters above. Runs as a
     # post step at the end of the job, pushing the store paths the job built.
     - name: Setup Attic push
