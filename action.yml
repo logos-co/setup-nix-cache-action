@@ -67,10 +67,10 @@ runs:
       id: select
       shell: bash
       env:
-        IS_DEFAULT_BRANCH: ${{ (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && 'true' || 'false' }}
-        CACHE_OVERRIDE: ${{ inputs.cache }}
-        TOKEN_CI: ${{ inputs.attic-token-ci }}
-        TOKEN_PUBLIC: ${{ inputs.attic-token-public }}
+        IS_DEFAULT_BRANCH: ${{ github.ref_name == github.event.repository.default_branch && 'true' || 'false' }}
+        CACHE_OVERRIDE:    ${{ inputs.cache }}
+        TOKEN_CI:          ${{ inputs.attic-token-ci }}
+        TOKEN_PUBLIC:      ${{ inputs.attic-token-public }}
       run: |
         if [ "$IS_DEFAULT_BRANCH" = "true" ]; then
           cache="${CACHE_OVERRIDE:-public}"; token="$TOKEN_PUBLIC"
