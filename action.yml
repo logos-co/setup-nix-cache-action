@@ -46,6 +46,24 @@ inputs:
     description: Extra lines appended to the Nix config at install time.
     required: false
     default: ''
+  include-paths:
+    description: >
+      Newline-separated regexes; when set, only store paths matching one of
+      them are pushed. Passed through to ryanccn/attic-action.
+    required: false
+    default: ''
+  exclude-paths:
+    description: >
+      Newline-separated regexes; store paths matching any of them are not
+      pushed (e.g. leaf bundles a PR build can never reuse). Passed through
+      to ryanccn/attic-action.
+    required: false
+    default: ''
+  skip-push:
+    description: >
+      Set 'true' to keep the Attic substituter but push nothing.
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -101,3 +119,6 @@ runs:
         endpoint: ${{ inputs.attic-endpoint }}
         cache: ${{ steps.select.outputs.cache }}
         token: ${{ steps.select.outputs.token }}
+        include-paths: ${{ inputs.include-paths }}
+        exclude-paths: ${{ inputs.exclude-paths }}
+        skip-push: ${{ inputs.skip-push }}

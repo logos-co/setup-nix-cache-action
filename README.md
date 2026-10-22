@@ -50,6 +50,22 @@ for the secrets to exist; ask infra to add it and run the ansible role.
 | `cache` | auto | override the publish cache (`public` on master/main, `ci` otherwise) |
 | `install-nix` | `true` | set `false` if the workflow installs Nix itself |
 | `extra-nix-config` | `''` | extra lines for the Nix config at install time |
+| `include-paths` | `''` | newline-separated regexes; push only matching store paths |
+| `exclude-paths` | `''` | newline-separated regexes; never push matching store paths |
+| `skip-push` | `''` | `true` keeps the substituters but pushes nothing |
+
+### Not pushing what a PR can't reuse
+
+A PR job's leaf artifacts (bundles, AppImages, `.app`s) are rebuilt on every
+new commit and after merge, so uploading them to `ci` only costs time; large
+NARs can take several minutes even when Attic deduplicates them. Exclude them
+on pull requests and keep publishing them from the default branch:
+
+```yaml
+      - uses: logos-co/setup-nix-cache-action@v1
+        with:
+          exclude-paths: ${{ github.event_name == 'pull_request' && '-my-app-bundle-' || '' }}
+```
 
 ## Bring your own Nix installer
 
