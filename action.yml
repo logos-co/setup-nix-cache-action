@@ -47,9 +47,31 @@ inputs:
     required: false
     default: ''
 
+outputs:
+  cache-reachable:
+    description: "'true' if the Logos cache answered, so its substituters are configured."
+    value: ${{ steps.probe.outputs.reachable }}
+
 runs:
   using: 'composite'
   steps:
+    - name: Probe the Logos cache
+      id: probe
+      shell: bash
+      run: |
+        if curl -sf --retry 2 -m 10 -o /dev/null https://cache.nix.logos.co/public/nix-cache-info; then
+          echo "reachable=true" >> "$GITHUB_OUTPUT"
+          {
+            echo 'nix-config<<EOF'
+            echo 'extra-substituters = https://cache.nix.logos.co/public https://cache.nix.logos.co/ci'
+            echo 'extra-trusted-public-keys = public:l4HrXgL4nw246+LBh2SOJyhz64BoGegOYLheT/iIAPU= ci:aVJqjS4NWX5WfqHO0AEhIScjGu/JyK5FoydPrnEbMvc='
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+        else
+          echo "reachable=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::cache.nix.logos.co is unreachable; installing Nix without the Logos substituters"
+        fi
+
     # Both caches are public to read, so the substituters belong here,
     # credential-free: fork PRs and any other run without secrets still pull.
     - name: Install Nix
@@ -58,8 +80,7 @@ runs:
       with:
         extra_nix_config: |
           experimental-features = nix-command flakes
-          extra-substituters = https://cache.nix.logos.co/public https://cache.nix.logos.co/ci
-          extra-trusted-public-keys = public:l4HrXgL4nw246+LBh2SOJyhz64BoGegOYLheT/iIAPU= ci:aVJqjS4NWX5WfqHO0AEhIScjGu/JyK5FoydPrnEbMvc=
+          ${{ steps.probe.outputs.nix-config }}
           fallback = true
           ${{ inputs.extra-nix-config }}
 
@@ -81,7 +102,7 @@ runs:
         echo "token=$token" >> "$GITHUB_OUTPUT"
 
     - name: Add Attic bin to PATH
-      if: steps.select.outputs.token != '' && inputs.attic-endpoint != ''
+      if: steps.probe.outputs.reachable == 'true' && steps.select.outputs.token != '' && inputs.attic-endpoint != ''
       shell: bash
       run: |
         if command -v attic >/dev/null 2>&1; then
@@ -97,7 +118,7 @@ runs:
     # The cache is an optimisation: if the Attic server is unreachable, login
     # fails here, and the job must carry on without publishing.
     - name: Setup Attic push
-      if: steps.select.outputs.token != '' && inputs.attic-endpoint != ''
+      if: steps.probe.outputs.reachable == 'true' && steps.select.outputs.token != '' && inputs.attic-endpoint != ''
       continue-on-error: true
       uses: ryanccn/attic-action@v0.5.0
       with:

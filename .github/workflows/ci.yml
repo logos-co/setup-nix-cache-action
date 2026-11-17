@@ -20,13 +20,20 @@ jobs:
       # No attic secrets in this repo: exercises the pull-only path — install
       # Nix, configure the substituters, skip publishing.
       - name: Run the action (pull-only)
+        id: setup
         uses: ./
 
-      - name: Substituters are configured
+      - name: Substituters match cache reachability
+        env:
+          REACHABLE: ${{ steps.setup.outputs.cache-reachable }}
         run: |
-          nix config show substituters | tee /dev/stderr \
-            | grep -q 'cache.nix.logos.co/public'
-          nix config show substituters | grep -q 'cache.nix.logos.co/ci'
+          subs=$(nix config show substituters | tee /dev/stderr)
+          if [ "$REACHABLE" = "true" ]; then
+            grep -q 'cache.nix.logos.co/public' <<<"$subs"
+            grep -q 'cache.nix.logos.co/ci' <<<"$subs"
+          else
+            if grep -q 'cache.nix.logos.co' <<<"$subs"; then exit 1; fi
+          fi
 
       - name: Nix builds
         run: nix run nixpkgs#hello

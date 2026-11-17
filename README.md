@@ -36,9 +36,10 @@ ref; when the matching token is empty (fork PRs get no secrets at all, and
 skips publishing instead of failing — pulling always works. The endpoint is
 baked in: it is public knowledge, not a secret.
 
-If the cache server is unreachable the job still runs: Attic setup fails
-without failing the job, and Nix falls back to `cache.nixos.org` and local
-builds.
+If the cache server is unreachable the job still runs: the action leaves the
+Logos substituters out of the Nix config, skips publishing, and Nix uses
+`cache.nixos.org` and local builds. The `cache-reachable` output reports which
+case applied.
 
 The repo must be listed in
 [infra-ci's `attic.yml`](https://github.com/status-im/infra-ci/blob/master/ansible/group_vars/attic.yml)
