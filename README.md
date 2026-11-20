@@ -62,7 +62,7 @@ substituters to your installer's config yourself:
 
 ```
 extra-substituters = https://cache.nix.logos.co/public https://cache.nix.logos.co/ci
-extra-trusted-public-keys = public:l4HrXgL4nw246+LBh2SOJyhz64BoGegOYLheT/iIAPU= ci:aVJqjS4NWX5WfqHO0AEhIScjGu/JyK5FoydPrnEbMvc=
+extra-trusted-public-keys = public:zaDAOkd+E3cQyFm9J7qejQYd9HoLJc1SJvnk68hNWeI= ci:X+0FRwBzGnCKlopUJn2PR6xfiP2hnFAW90ruKaLumng=
 fallback = true
 ```
 
@@ -74,7 +74,7 @@ This action is CI-only. For local builds, add the **public** cache (never
 ```nix
 nixConfig = {
   extra-substituters = [ "https://cache.nix.logos.co/public" ];
-  extra-trusted-public-keys = [ "public:l4HrXgL4nw246+LBh2SOJyhz64BoGegOYLheT/iIAPU=" ];
+  extra-trusted-public-keys = [ "public:zaDAOkd+E3cQyFm9J7qejQYd9HoLJc1SJvnk68hNWeI=" ];
 };
 ```
 
